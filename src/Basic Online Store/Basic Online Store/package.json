@@ -1,0 +1,12 @@
+{
+  "name": "basic-online-store",
+  "version": "0.0.0",
+  "description": "Basic Online Store",
+  "main": "app.js",
+  "author": {
+    "name": "Denisevich"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.28.0"
+  }
+}
