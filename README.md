@@ -43,3 +43,7 @@ Screens with work:
 **Basket:**
 
 ![Basket](https://image.ibb.co/nP0pBk/basket.png)
+
+**Simpliest orders manager**
+
+![Basket](https://preview.ibb.co/cRGqZ5/manager.png)
