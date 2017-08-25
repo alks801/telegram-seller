@@ -2,7 +2,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const _ = require('lodash');
 
-const bot_token = '';
+const bot_token = '369838448:AAHzXhCJVNMa4tXx7vsFHjqt_5wg4RXoB2U';
 const bot = new TelegramBot(bot_token, { polling: true });
 
 //Main menu buttons strings
@@ -28,26 +28,29 @@ const mainMenuScreen = {
 };
 
 //basket
-const getBasketMenuScreen = () => {
-    let basketItems = await executeSql('SELECT * FROM `shop-nodejs`.basket;', true);
-
-    let res = {};
-    let total = 0;
-    res.text = '*Basket:*\r\n';
-    _.forEach(basketItems, (b) => {
-        res.text = `${res.text}${b.productid}|${b.productname}|${b.productcost}\r\n`;
-        total += b.cost;
-    })
-    res.text = res.text + 'Total:' + total;
-    res.option = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: 'Order!', callback_data: 'basket_order' }]
-            ]
-        },
-        parse_mode: 'Markdown'
-    };
-    return res;
+const getBasketMenuScreen = (chatid) => {
+    connection.query('SELECT * FROM `shop-nodejs`.basket WHERE chatid = ' + chatid, (err, result, fields) => {
+        if (err) throw err;
+        let basketItems = result;
+        let total = 0;
+        let text = '*Basket:*\r\n';
+        let counter = 1;
+        _.forEach(basketItems, (b) => {
+            text = `${text}${counter}|${b.productname}|$${b.productcost}\r\n`;
+            total += b.productcost;
+            counter++;
+        })
+        text = text + 'Total:' + total;
+        let options = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: 'Order!', callback_data: 'basket_order' }]
+                ]
+            },
+            parse_mode: 'Markdown'
+        };
+        bot.sendMessage(chatid, text, options);
+    });
 };
 
 //help
@@ -72,7 +75,7 @@ const showProduct = (chatId, product) => {
         options: {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: 'Order!', callback_data: `product_basket_${product.idproduct}` }]
+                    [{ text: 'Add to basket', callback_data: `product_basket_${product.idproduct}` }]
                 ]
             },
             parse_mode: 'Markdown'
@@ -82,26 +85,23 @@ const showProduct = (chatId, product) => {
 }
 
 //db
-const getConnectionAsync = async () => {
-    var mysql = require('mysql');
-    return mysql.createPool({
-        host: 'localhost',
-        user: 'sa',
-        password: '1111',
-        database: 'shop-nodejs'
+var mysql = require('mysql');
+var connection = mysql.createConnection({
+    connectionLimit: 100, //important
+    host: 'localhost',
+    user: 'sa',
+    password: '1111',
+    database: 'shop-nodejs',
+    debug: false
+});
+
+//guid generator
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
     });
-};
-
-const executeSql = async (q, isReturn) => {
-    const pool = await getConnectionAsync();
-    let res = await pool.query(q/*, (e, r, f) => {
-        return r;
-    }*/);
-    if (isReturn)
-        return res;
-    return;
 }
-
 //
 //---events---
 
@@ -126,35 +126,61 @@ bot.on('message', (msg) => {
             bot.sendMessage(msg.chat.id, helpScreen.text, helpScreen.options);
             break;
         case basketString:
-            let basketMenuScreen = getBasketMenuScreen();
-            bot.sendMessage(msg.chat.id, basketMenuScreen.text, basketMenuScreen.options);
+            getBasketMenuScreen(msg.chat.id);
             break;
         default:
     }
 });
 
 //callback clicks
-bot.on('callback_query', async (cbq) => {
+bot.on('callback_query', (cbq) => {
     switch (cbq.data) {
         case 'main_products':
-            var products = await executeSql('SELECT * FROM `shop-nodejs`.product;', true);
-            if (roducts && products.length > 0) {
-                _.forEach(products, (p) => {
-                    showProduct(cbq.from.id, p);
-                })
-            }
+            connection.query('SELECT * FROM `shop-nodejs`.product;', (err, result, fields) => {
+                if (err) throw err;
+                var products = result;
+                if (products && products.length > 0) {
+                    _.forEach(products, (p) => {
+                        showProduct(cbq.from.id, p);
+                    })
+                }
+            });
             break;
         case 'basket_order':
-            let basketItems = await executeSql('SELECT * FROM `shop-nodejs`.basket WHERE chatid=' + cbq.from.id + ';', true);
-            _.forEach(basketItems,
-                (b) => {
-                    await executeSql($`INSERT INTO order (chatid, productid) VALUES (${cbq.from.id}, ${b.productid})`, false);
-                });
-            bot.sendMessage(msg.chat.id, 'Successful!');
+            connection.query('SELECT * FROM `shop-nodejs`.basket WHERE chatid=' + cbq.from.id + ';', (err, result, fields) => {
+                if (err) throw err;
+                var basketItems = result;
+                if (basketItems && basketItems.length > 0) {
+                    let insertetCount = 0;
+                    let orderid = uuidv4();//for fun
+                    _.forEach(basketItems,
+                        (b) => {
+                            connection.query(`INSERT INTO \`shop-nodejs\`.order (idorder, chatid, productid) VALUES('${orderid}',${b.chatid}, ${b.productid})`, (err, result, fields) => {
+                                if (err) throw err;
+                                insertetCount++;
+                                if (insertetCount == basketItems.length) {
+                                    connection.query('DELETE FROM \`shop-nodejs\`.basket WHERE chatid = ' + b.chatid, (err, result, fields) => {
+                                        if (err) throw err;
+                                        bot.sendMessage(cbq.from.id, 'Successful!');
+                                    });
+                                }
+                            });
+                        });
+                }
+            });
+            break;
     }
-    if (cdq.data.startWith('product_basket')) {
-        let productid = cdq.data.split('_')[2];
-        await executeSql($`INSERT INTO basket (chatid, productid) VALUES (${cbq.from.id}, ${productid})`, false);
+    if (cbq.data.startsWith('product_basket')) {
+        let productid = cbq.data.split('_')[2];
+        connection.query('SELECT * FROM `shop-nodejs`.product WHERE idproduct = ' + productid, (err, result, fields) => {
+            if (err) throw err;
+            let product = result[0];
+            connection.query(`INSERT INTO \`shop-nodejs\`.basket (chatid, productid, productname,productcost) VALUES (${cbq.from.id}, ${productid}, '${product.name}', ${product.cost})`, (err, result, fields) => {
+                if (err) throw err;
+                bot.sendMessage(cbq.from.id, `${product.name} successful added to basket!`);
+            });
+        })
+
     }
     bot.answerCallbackQuery({ callback_query_id: cbq.id });
 });
