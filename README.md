@@ -18,7 +18,7 @@ After it install MySQL and add some data to your db.
  Current neccessary tables:
 
 * `product (idproduct, name, description)`
-* `basket (id, chatid, productid)`
+* `basket (id, chatid, productid, productname, productcost)`
 * `order (id, irder, chatid, productid)`
 * `chat (id, username, f_name, l_name)`
 
@@ -36,7 +36,7 @@ Screens with work:
 
 ![Products](https://image.ibb.co/dT3Fj5/3.png)
 
-**Ordering:**
+**Adding to basket:**
 
 ![Ordering](https://image.ibb.co/kgu7Wk/3333.png)
 
