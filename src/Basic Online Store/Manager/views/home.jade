@@ -1,0 +1,20 @@
+html
+  head
+    title=title
+    link(href='//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css', rel='stylesheet')
+  body
+    h2 Orders
+    div.container
+        table.table.table-striped
+            thead
+                tr
+                    th OrderId
+                    th ChatId
+                    th ProductId
+            tbody
+                each order in data
+                    tr
+                        td= order.idorder
+                        td= order.chatid
+                        td= order.productid
+

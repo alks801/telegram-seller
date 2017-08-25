@@ -1,0 +1,14 @@
+{
+  "name": "manager",
+  "version": "0.0.0",
+  "description": "Manager",
+  "main": "server.js",
+  "author": {
+    "name": "denisevich"
+  },
+  "dependencies": {
+    "express": "^4.15.4",
+    "express-stormpath": "^4.0.0",
+    "mysql": "^2.14.1"
+  }
+}
