@@ -21,3 +21,25 @@ After it install MySQL and add some data to your db.
 * `basket (id, chatid, productid)`
 * `order (id, irder, chatid, productid)`
 * `chat (id, username, f_name, l_name)`
+
+Screens with work:
+
+**Start:**
+
+![Start](https://image.ibb.co/jxSfHQ/Capture.png)
+
+**MainMenu:**
+
+![MainMenu](https://image.ibb.co/f9uAHQ/2.png)
+
+**Products:**
+
+![Products](https://image.ibb.co/dT3Fj5/3.png)
+
+**Ordering:**
+
+![Ordering](https://image.ibb.co/kgu7Wk/3333.png)
+
+**Basket:**
+
+![Basket](https://image.ibb.co/nP0pBk/basket.png)
